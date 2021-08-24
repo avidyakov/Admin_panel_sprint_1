@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  database:
+    container_name: movies_database
+    image: postgres:13
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./schema_design/db_schema.sql:/docker-entrypoint-initdb.d/10-init.sql
+      - ./database_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
