@@ -8,6 +8,7 @@ services:
       - "5433:5432"
     volumes:
       - ./schema_design/db_schema.sql:/docker-entrypoint-initdb.d/10-init.sql
-      - ./database_data:/var/lib/postgresql/data
+#      - ./database_data:/var/lib/postgresql/data
     environment:
+#      - POSTGRES_DB=movies
       - POSTGRES_PASSWORD=password
