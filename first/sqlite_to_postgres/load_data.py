@@ -1,12 +1,13 @@
 import sqlite3
 
-from loguru import logger
 import psycopg2
+from loguru import logger
 from psycopg2.extras import DictCursor
-
-from sqlite_to_postgres.dataclasses_ import ActorsMovies, DirectorsMovies, WritersMovies, GenresMovies, Movie, Person, \
-    Genre
 from transfer.abs import AbstractTransfer
+
+from sqlite_to_postgres.dataclasses_ import (ActorsMovies, DirectorsMovies,
+                                             Genre, GenresMovies, Movie,
+                                             Person, WritersMovies)
 
 
 class Transfer(AbstractTransfer):
@@ -19,7 +20,8 @@ class Transfer(AbstractTransfer):
     genre = Genre
 
     EXPORT_QUEUE = (
-        'genre', 'person', 'movie', 'genres_movies', 'writers_movies', 'directors_movies', 'actors_movies'
+        'genre', 'person', 'movie', 'genres_movies',
+        'writers_movies', 'directors_movies', 'actors_movies'
     )
 
 
@@ -29,10 +31,12 @@ if __name__ == '__main__':
         'user': 'postgres',
         'password': 'password',
         'host': '0.0.0.0',
-        'port': 5433
+        'port': 5433,
+        'options': '-c search_path=content',
     }
 
-    with sqlite3.connect('db.sqlite') as sqlite_conn, psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
+    with sqlite3.connect('db.sqlite') as sqlite_conn, \
+            psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         cursor = pg_conn.cursor()
         cursor.execute('SELECT * FROM content.genres')
 

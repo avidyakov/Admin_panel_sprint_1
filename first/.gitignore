@@ -6,3 +6,4 @@ __pycache__
 .env
 migrations/*
 !migrations/__init__.py
+.mypy_cache

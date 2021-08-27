@@ -30,7 +30,7 @@ class Person(AbstractDataclass):
 
     class Meta:
         tables_to_import = 'actors', 'writers'
-        table_to_export = 'content.persons'
+        table_to_export = 'persons'
 
 
 @dataclass(unsafe_hash=True)
@@ -43,7 +43,7 @@ class Movie(AbstractDataclass):
     plot: str
     raw_ratings: None
     raw_imdb_rating: float
-    raw_writers: list[dict]
+    raw_writers: str
     imdb_rating: float = 0.0
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
@@ -90,7 +90,7 @@ class Movie(AbstractDataclass):
 
     class Meta:
         tables_to_import = 'movies',
-        table_to_export = 'content.movies'
+        table_to_export = 'movies'
 
 
 @dataclass
@@ -100,7 +100,7 @@ class GenresMovies(AbstractDataclass):
 
     class Meta:
         tables_to_import = ()
-        table_to_export = 'content.genres_movies'
+        table_to_export = 'genres_movies'
 
     def __hash__(self):
         return hash(f'{self.genre_id}{self.movie_id}')
@@ -113,7 +113,7 @@ class WritersMovies(AbstractDataclass):
 
     class Meta:
         tables_to_import = ()
-        table_to_export = 'content.writers_movies'
+        table_to_export = 'writers_movies'
 
     def __hash__(self):
         return hash(f'{self.person_id}{self.movie_id}')
@@ -126,7 +126,7 @@ class DirectorsMovies(AbstractDataclass):
 
     class Meta:
         tables_to_import = ()
-        table_to_export = 'content.directors_movies'
+        table_to_export = 'directors_movies'
 
     def __hash__(self):
         return hash(f'{self.person_id}{self.movie_id}')
@@ -151,7 +151,7 @@ class ActorsMovies(AbstractDataclass):
 
     class Meta:
         tables_to_import = 'movie_actors',
-        table_to_export = 'content.actors_movies'
+        table_to_export = 'actors_movies'
 
     def __hash__(self):
         return hash(f'{self.person_id}{self.movie_id}')

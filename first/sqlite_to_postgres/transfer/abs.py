@@ -1,6 +1,6 @@
 import csv
 import io
-from dataclasses import is_dataclass, fields, asdict
+from dataclasses import asdict, fields, is_dataclass
 
 DELIMITER = '|'
 
