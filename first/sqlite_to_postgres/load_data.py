@@ -1,13 +1,11 @@
 import sqlite3
 
 import psycopg2
+from dataclasses_ import (ActorsMovies, DirectorsMovies, Genre, GenresMovies,
+                          Movie, Person, WritersMovies)
 from loguru import logger
 from psycopg2.extras import DictCursor
 from transfer.abs import AbstractTransfer
-
-from dataclasses_ import (ActorsMovies, DirectorsMovies,
-                          Genre, GenresMovies, Movie,
-                          Person, WritersMovies)
 
 
 class Transfer(AbstractTransfer):
