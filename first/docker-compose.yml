@@ -10,5 +10,18 @@ services:
       - ./schema_design/db_schema.sql:/docker-entrypoint-initdb.d/10-init.sql
 #      - ./database_data:/var/lib/postgresql/data
     environment:
-#      - POSTGRES_DB=movies
       - POSTGRES_PASSWORD=password
+  web:
+    container_name: movies_admin
+    build:
+      dockerfile: ./movies_admin/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./movies_admin/.env
+    volumes:
+      - ./movies_admin:/app
+    entrypoint:
+      - "python"
+      - "entrypoint.py"
+    restart: always
