@@ -1,9 +1,0 @@
-database_data
-venv
-__pycache__
-.DS_Store
-.idea
-.env
-migrations/*
-!migrations/__init__.py
-.mypy_cache

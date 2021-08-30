@@ -1,20 +1,46 @@
 import sqlite3
 
 import psycopg2
-from psycopg2.extensions import connection as _connection
+from dataclasses_ import (ActorsMovies, DirectorsMovies, Genre, GenresMovies,
+                          Movie, Person, WritersMovies)
+from loguru import logger
 from psycopg2.extras import DictCursor
+from transfer.abs import AbstractTransfer
 
 
-def load_from_sqlite(connection: sqlite3.Connection, pg_conn: _connection):
-    """Основной метод загрузки данных из SQLite в Postgres"""
-    # postgres_saver = PostgresSaver(pg_conn)
-    # sqlite_loader = SQLiteLoader(connection)
+class Transfer(AbstractTransfer):
+    actors_movies = ActorsMovies
+    directors_movies = DirectorsMovies
+    writers_movies = WritersMovies
+    genres_movies = GenresMovies
+    movie = Movie
+    person = Person
+    genre = Genre
 
-    # data = sqlite_loader.load_movies()
-    # postgres_saver.save_all_data(data)
+    EXPORT_QUEUE = (
+        'genre', 'person', 'movie', 'genres_movies',
+        'writers_movies', 'directors_movies', 'actors_movies'
+    )
 
 
 if __name__ == '__main__':
-    dsl = {'dbname': 'movies_database', 'user': 'postgres', 'password': 1234, 'host': '127.0.0.1', 'port': 5432}
-    with sqlite3.connect('db.sqlite') as sqlite_conn, psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
-        load_from_sqlite(sqlite_conn, pg_conn)
+    dsl = {
+        'dbname': 'movies',
+        'user': 'postgres',
+        'password': 'password',
+        'host': '0.0.0.0',
+        'port': 5433,
+        'options': '-c search_path=content',
+    }
+
+    with sqlite3.connect('db.sqlite') as sqlite_conn, \
+            psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
+        cursor = pg_conn.cursor()
+        cursor.execute('SELECT * FROM content.genres')
+
+        if not cursor.fetchone():
+            transfer = Transfer(sqlite_conn, pg_conn)
+            transfer.transfer()
+            logger.info('Перенос данных успешно выполнен')
+        else:
+            logger.warning('Данные в базе уже есть')
