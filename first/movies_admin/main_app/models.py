@@ -8,8 +8,12 @@ class TimeStampedMixin:
 
 
 class Genre(TimeStampedMixin, models.Model):
+    id = models.UUIDField('UUID', primary_key=True)
     name = models.CharField('Название', max_length=255)
     description = models.TextField('Описание', blank=True)
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Жанр'
@@ -23,8 +27,9 @@ class Film(TimeStampedMixin, models.Model):
         MOVIE = 'mo', 'Фильм'
         TV_SHOW = 'tv', 'Сериал'
 
+    id = models.UUIDField('UUID', primary_key=True)
     title = models.CharField('Заголовок', max_length=255)
-    plo = models.TextField('Описание', blank=True)
+    plot = models.TextField('Описание', blank=True)
     creation_date = models.DateField('Год выпуска', blank=True)
     certificate = models.TextField('Сертификат', blank=True)
     file_path = models.FileField('Файл', upload_to='films/', blank=True)
@@ -33,6 +38,9 @@ class Film(TimeStampedMixin, models.Model):
 
     genres = models.ManyToManyField(Genre, through='GenresFilms')
 
+    def __str__(self):
+        return self.title
+
     class Meta:
         verbose_name = 'Кинопроизведение'
         verbose_name_plural = 'Кинопроизведения'
@@ -40,12 +48,15 @@ class Film(TimeStampedMixin, models.Model):
 
 
 class Person(TimeStampedMixin, models.Model):
-    first_name = models.CharField('Имя', max_length=127)
-    last_name = models.CharField('Фамилия', max_length=127)
+    id = models.UUIDField('UUID', primary_key=True)
+    name = models.CharField('Имя', max_length=127)
 
-    actor = models.ManyToManyField(Film, verbose_name='Актер', related_name='actors')
-    writer = models.ManyToManyField(Film, verbose_name='Сценарист', related_name='writers')
-    director = models.ManyToManyField(Film, verbose_name='Режиссер', related_name='directors')
+    actor = models.ManyToManyField(Film, verbose_name='Актер', related_name='actors', through='ActorsFilms')
+    writer = models.ManyToManyField(Film, verbose_name='Сценарист', related_name='writers', through='WritersFilms')
+    director = models.ManyToManyField(Film, verbose_name='Режиссер', related_name='directors', through='DirectorsFilms')
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = 'Персона'

@@ -11,14 +11,22 @@ CREATE TABLE IF NOT EXISTS content.persons (
 
 CREATE TABLE IF NOT EXISTS content.genres (
     id uuid PRIMARY KEY,
-    name VARCHAR(64) NOT NULL
+    name VARCHAR(64) NOT NULL,
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS content.movies (
+    id uuid PRIMARY KEY,
     title VARCHAR(128) NOT NULL,
     plot TEXT,
     imdb_rating FLOAT,
-    id uuid PRIMARY KEY
+    creation_date DATE,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone,
+    file_path VARCHAR(256),
+    type VARCHAR(2),
+    rating FLOAT,
+    certificate TEXT
 );
 
 CREATE TABLE IF NOT EXISTS content.genres_movies (
