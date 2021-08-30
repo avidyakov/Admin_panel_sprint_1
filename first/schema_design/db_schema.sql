@@ -30,35 +30,35 @@ CREATE TABLE IF NOT EXISTS content.movies (
 );
 
 CREATE TABLE IF NOT EXISTS content.genres_movies (
-  genre_id uuid NOT NULL,
-  movie_id uuid NOT NULL,
-  PRIMARY KEY (genre_id, movie_id),
-  FOREIGN KEY (genre_id) REFERENCES content.genres(id) ON UPDATE CASCADE,
-  FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
+    id uuid PRIMARY KEY,
+    genre_id uuid NOT NULL,
+    movie_id uuid NOT NULL,
+    FOREIGN KEY (genre_id) REFERENCES content.genres(id) ON UPDATE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS content.writers_movies (
-  person_id uuid NOT NULL,
-  movie_id uuid NOT NULL,
-  PRIMARY KEY (person_id, movie_id),
-  FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
-  FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
+    id uuid PRIMARY KEY,
+    person_id uuid NOT NULL,
+    movie_id uuid NOT NULL,
+    FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS content.actors_movies (
-  person_id uuid NOT NULL,
-  movie_id uuid NOT NULL,
-  PRIMARY KEY (person_id, movie_id),
-  FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
-  FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
+    id uuid PRIMARY KEY,
+    person_id uuid NOT NULL,
+    movie_id uuid NOT NULL,
+    FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS content.directors_movies (
-  person_id uuid NOT NULL,
-  movie_id uuid NOT NULL,
-  PRIMARY KEY (person_id, movie_id),
-  FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
-  FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
+    id uuid PRIMARY KEY,
+    person_id uuid NOT NULL,
+    movie_id uuid NOT NULL,
+    FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS genres_movies_index ON content.genres_movies (genre_id, movie_id);

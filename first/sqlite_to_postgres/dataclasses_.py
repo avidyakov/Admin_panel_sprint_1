@@ -61,8 +61,13 @@ class Movie(AbstractDataclass):
                 genre = Genre(name=raw_genre)
                 transfer.genre_set.add(genre)
 
-            new_genres_movies = GenresMovies(genre_id=genre.id, movie_id=self.id)
-            transfer.genres_movies_set.add(new_genres_movies)
+            try:
+                list(filter(
+                    lambda i: i.genre_id == genre.id and i.movie_id == self.id, transfer.genres_movies_set
+                ))[0]
+            except IndexError:
+                new_genres_movies = GenresMovies(genre_id=genre.id, movie_id=self.id)
+                transfer.genres_movies_set.add(new_genres_movies)
 
     def process_raw_director(self, transfer) -> None:
         for raw_director in self.raw_director.split(', '):
@@ -72,72 +77,82 @@ class Movie(AbstractDataclass):
                 person = Person(name=raw_director)
                 transfer.person_set.add(person)
 
-            new_directors_movies = DirectorsMovies(person_id=person.id, movie_id=self.id)
-            transfer.directors_movies_set.add(new_directors_movies)
+            try:
+                list(filter(
+                    lambda i: i.person_id == person.id and i.movie_id == self.id, transfer.directors_movies_set
+                ))[0]
+            except IndexError:
+                new_directors_movies = DirectorsMovies(person_id=person.id, movie_id=self.id)
+                transfer.directors_movies_set.add(new_directors_movies)
 
     def process_raw_writer(self, transfer) -> None:
         if self.raw_writer:
             writer = list(filter(lambda person: person.raw_writer_id == self.raw_writer, transfer.person_set))[0]
-            new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
-            transfer.writers_movies_set.add(new_persons_movie)
+            try:
+                list(filter(
+                    lambda i: i.person_id == writer.id and i.movie_id == self.id, transfer.writers_movies_set
+                ))[0]
+            except IndexError:
+                new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
+                transfer.writers_movies_set.add(new_persons_movie)
 
     def process_raw_writers(self, transfer) -> None:
         if self.raw_writers:
             for raw_writer in json.loads(self.raw_writers):
                 writer = list(filter(lambda p: p.raw_writer_id == raw_writer['id'], transfer.person_set))[0]
-                new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
-                transfer.writers_movies_set.add(new_persons_movie)
+                try:
+                    list(filter(
+                        lambda i: i.person_id == writer.id and i.movie_id == self.id, transfer.writers_movies_set
+                    ))[0]
+                except IndexError:
+                    new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
+                    transfer.writers_movies_set.add(new_persons_movie)
 
     class Meta:
         tables_to_import = 'movies',
         table_to_export = 'movies'
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class GenresMovies(AbstractDataclass):
     genre_id: uuid.UUID
     movie_id: uuid.UUID
+    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
     class Meta:
         tables_to_import = ()
         table_to_export = 'genres_movies'
 
-    def __hash__(self):
-        return hash(f'{self.genre_id}{self.movie_id}')
 
-
-@dataclass
+@dataclass(unsafe_hash=True)
 class WritersMovies(AbstractDataclass):
     person_id: uuid.UUID
     movie_id: uuid.UUID
+    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
     class Meta:
         tables_to_import = ()
         table_to_export = 'writers_movies'
 
-    def __hash__(self):
-        return hash(f'{self.person_id}{self.movie_id}')
 
-
-@dataclass
+@dataclass(unsafe_hash=True)
 class DirectorsMovies(AbstractDataclass):
     person_id: uuid.UUID
     movie_id: uuid.UUID
+    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
     class Meta:
         tables_to_import = ()
         table_to_export = 'directors_movies'
 
-    def __hash__(self):
-        return hash(f'{self.person_id}{self.movie_id}')
 
-
-@dataclass
+@dataclass(unsafe_hash=True)
 class ActorsMovies(AbstractDataclass):
     raw_movie_id: str = None
     raw_actor_id: int = None
     person_id: uuid.UUID = None
     movie_id: uuid.UUID = None
+    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
     def process_raw_actor_id(self, transfer) -> None:
         if self.raw_actor_id:
@@ -149,9 +164,16 @@ class ActorsMovies(AbstractDataclass):
             movie = list(filter(lambda m: m.raw_id == self.raw_movie_id, transfer.movie_set))[0]
             self.movie_id = movie.id
 
+    def process_all(self, transfer):
+        super().process_all(transfer)
+
+        actors_movies = list(filter(
+            lambda i: i.raw_actor_id == self.raw_actor_id and i.raw_movie_id == self.raw_movie_id,
+            transfer.actors_movies_set
+        ))
+        if len(actors_movies) == 2:
+            self.save = False
+
     class Meta:
         tables_to_import = 'movie_actors',
         table_to_export = 'actors_movies'
-
-    def __hash__(self):
-        return hash(f'{self.person_id}{self.movie_id}')

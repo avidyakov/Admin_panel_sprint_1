@@ -1,3 +1,5 @@
+import uuid
+
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
@@ -8,7 +10,7 @@ class TimeStampedMixin:
 
 
 class Genre(TimeStampedMixin, models.Model):
-    id = models.UUIDField('UUID', primary_key=True)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Название', max_length=255)
     description = models.TextField('Описание', blank=True)
 
@@ -27,7 +29,7 @@ class Film(TimeStampedMixin, models.Model):
         MOVIE = 'mo', 'Фильм'
         TV_SHOW = 'tv', 'Сериал'
 
-    id = models.UUIDField('UUID', primary_key=True)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     title = models.CharField('Заголовок', max_length=255)
     plot = models.TextField('Описание', blank=True)
     creation_date = models.DateField('Год выпуска', blank=True)
@@ -36,7 +38,7 @@ class Film(TimeStampedMixin, models.Model):
     rating = models.FloatField('Рейтинг', validators=[MinValueValidator(0), MaxValueValidator(10)], blank=True)
     type = models.CharField('Тип', max_length=2, choices=FilmType.choices, default=FilmType.MOVIE)
 
-    genres = models.ManyToManyField(Genre, through='GenresFilms')
+    genres = models.ManyToManyField(Genre, through='GenresFilms', blank=True)
 
     def __str__(self):
         return self.title
@@ -48,7 +50,7 @@ class Film(TimeStampedMixin, models.Model):
 
 
 class Person(TimeStampedMixin, models.Model):
-    id = models.UUIDField('UUID', primary_key=True)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Имя', max_length=127)
 
     actor = models.ManyToManyField(Film, verbose_name='Актер', related_name='actors', through='ActorsFilms')
@@ -65,36 +67,36 @@ class Person(TimeStampedMixin, models.Model):
 
 
 class GenresFilms(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
+    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'genres_movies'
 
 
 class ActorsFilms(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
+    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'actors_movies'
 
 
 class WritersFilms(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
+    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'writers_movies'
 
 
 class DirectorsFilms(models.Model):
-    film = models.ForeignKey(Film, on_delete=models.CASCADE)
+    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
+    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'directors_movies'

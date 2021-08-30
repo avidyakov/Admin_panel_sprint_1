@@ -6,6 +6,7 @@ DELIMITER = '|'
 
 
 class AbstractDataclass:
+    save: bool = True
 
     def process_all(self, transfer):
         for raw_field in self._get_raw_fields():
@@ -20,7 +21,7 @@ class AbstractDataclass:
 
     @classmethod
     def _get_columns(cls):
-        return [f.name for f in fields(cls) if not f.name.startswith('raw_')]
+        return [f.name for f in fields(cls) if not f.name.startswith('raw_') and f != 'save']
 
     @classmethod
     def export_csv(cls, values):
@@ -28,8 +29,9 @@ class AbstractDataclass:
         columns = cls._get_columns()
         writer = csv.DictWriter(file, columns, delimiter=DELIMITER)
         for value in values:
-            filtered_dict = {key: value for key, value in asdict(value).items() if not key.startswith('raw_')}
-            writer.writerow(filtered_dict)
+            if value.save:
+                filtered_dict = {key: value for key, value in asdict(value).items() if not key.startswith('raw_')}
+                writer.writerow(filtered_dict)
 
         return file, columns
 
