@@ -6,13 +6,17 @@ CREATE SCHEMA IF NOT EXISTS content;
 
 CREATE TABLE IF NOT EXISTS content.persons (
     id uuid PRIMARY KEY,
-    name VARCHAR(128) NOT NULL
+    name VARCHAR(128) NOT NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
     id uuid PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
-    description TEXT
+    description TEXT,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS content.movies (
@@ -21,12 +25,12 @@ CREATE TABLE IF NOT EXISTS content.movies (
     plot TEXT,
     imdb_rating FLOAT,
     creation_date DATE,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone,
     file_path VARCHAR(256),
     type VARCHAR(2),
     rating FLOAT,
-    certificate TEXT
+    certificate TEXT,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS content.genres_movies (
@@ -37,34 +41,15 @@ CREATE TABLE IF NOT EXISTS content.genres_movies (
     FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS content.writers_movies (
+CREATE TABLE IF NOT EXISTS content.persons_movies (
     id uuid PRIMARY KEY,
     person_id uuid NOT NULL,
     movie_id uuid NOT NULL,
+    role VARCHAR(1) NOT NULL,
     FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
     FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS content.actors_movies (
-    id uuid PRIMARY KEY,
-    person_id uuid NOT NULL,
-    movie_id uuid NOT NULL,
-    FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
-    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
-);
+CREATE UNIQUE INDEX IF NOT EXISTS genres_movies_index ON content.genres_movies (movie_id, genre_id);
 
-CREATE TABLE IF NOT EXISTS content.directors_movies (
-    id uuid PRIMARY KEY,
-    person_id uuid NOT NULL,
-    movie_id uuid NOT NULL,
-    FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
-    FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS genres_movies_index ON content.genres_movies (genre_id, movie_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS writers_movies_index ON content.writers_movies (person_id, movie_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS actors_movies_index ON content.actors_movies (person_id, movie_id);
-
-CREATE UNIQUE INDEX IF NOT EXISTS directors_movies_index ON content.directors_movies (person_id, movie_id);
+CREATE UNIQUE INDEX IF NOT EXISTS persons_movies_index ON content.persons_movies (person_id, movie_id);

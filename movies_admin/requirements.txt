@@ -1,3 +1,7 @@
-django
-loguru
-psycopg2-binary
+asgiref==3.4.1
+Django==3.2.7
+loguru==0.5.3
+Pillow==8.3.1
+psycopg2-binary==2.9.1
+pytz==2021.1
+sqlparse==0.4.1

@@ -2,11 +2,11 @@ import json
 import uuid
 from dataclasses import dataclass, field
 
-from transfer.abs import AbstractDataclass
+from transfer import Model
 
 
 @dataclass(unsafe_hash=True)
-class Genre(AbstractDataclass):
+class Genre(Model):
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
     name: str = ''
 
@@ -16,7 +16,7 @@ class Genre(AbstractDataclass):
 
 
 @dataclass(unsafe_hash=True)
-class Person(AbstractDataclass):
+class Person(Model):
     raw_actor_id: int = None
     raw_writer_id: str = None
     name: str = ''
@@ -34,7 +34,7 @@ class Person(AbstractDataclass):
 
 
 @dataclass(unsafe_hash=True)
-class Movie(AbstractDataclass):
+class Movie(Model):
     raw_id: str
     raw_genres: str
     raw_director: str
@@ -114,7 +114,7 @@ class Movie(AbstractDataclass):
 
 
 @dataclass(unsafe_hash=True)
-class GenresMovies(AbstractDataclass):
+class GenresMovies(Model):
     genre_id: uuid.UUID
     movie_id: uuid.UUID
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
@@ -125,37 +125,18 @@ class GenresMovies(AbstractDataclass):
 
 
 @dataclass(unsafe_hash=True)
-class WritersMovies(AbstractDataclass):
-    person_id: uuid.UUID
-    movie_id: uuid.UUID
-    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
-
-    class Meta:
-        tables_to_import = ()
-        table_to_export = 'writers_movies'
-
-
-@dataclass(unsafe_hash=True)
-class DirectorsMovies(AbstractDataclass):
-    person_id: uuid.UUID
-    movie_id: uuid.UUID
-    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
-
-    class Meta:
-        tables_to_import = ()
-        table_to_export = 'directors_movies'
-
-
-@dataclass(unsafe_hash=True)
-class ActorsMovies(AbstractDataclass):
+class PersonsMovies(Model):
     raw_movie_id: str = None
     raw_actor_id: int = None
+
+    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
     person_id: uuid.UUID = None
     movie_id: uuid.UUID = None
-    id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
+    role: str = ''
 
     def process_raw_actor_id(self, transfer) -> None:
         if self.raw_actor_id:
+            self.role = 'a'
             person = list(filter(lambda p: str(p.raw_actor_id) == self.raw_actor_id, transfer.person_set))[0]
             self.person_id = person.id
 
@@ -176,4 +157,4 @@ class ActorsMovies(AbstractDataclass):
 
     class Meta:
         tables_to_import = 'movie_actors',
-        table_to_export = 'actors_movies'
+        table_to_export = 'persons_movies'

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Film, Genre, Person
+from .models import Film, Genre, Person, PersonsFilms
 
 
 @admin.register(Genre)
@@ -13,24 +13,10 @@ class PersonAdmin(admin.ModelAdmin):
     pass
 
 
-class ActorsInline(admin.TabularInline):
-    model = Person.actor.through
-    verbose_name = 'Актер'
-    verbose_name_plural = 'Актеры'
-    extra = 0
-
-
-class DirectorsInline(admin.TabularInline):
-    model = Person.director.through
-    verbose_name = 'Режиссер'
-    verbose_name_plural = 'Режиссеры'
-    extra = 0
-
-
-class WritersInline(admin.TabularInline):
-    model = Person.writer.through
-    verbose_name = 'Сценарист'
-    verbose_name_plural = 'Сценаристы'
+class PersonsInline(admin.TabularInline):
+    model = PersonsFilms
+    verbose_name = 'Персона'
+    verbose_name_plural = 'Персоны'
     extra = 0
 
 
@@ -44,4 +30,4 @@ class GenresInline(admin.TabularInline):
 @admin.register(Film)
 class FilmAdmin(admin.ModelAdmin):
     search_fields = 'title',
-    inlines = GenresInline, ActorsInline, DirectorsInline, WritersInline
+    inlines = GenresInline, PersonsInline

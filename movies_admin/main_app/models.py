@@ -4,12 +4,15 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
-class TimeStampedMixin:
+class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        abstract = True
 
-class Genre(TimeStampedMixin, models.Model):
+
+class Genre(TimeStampedModel):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Название', max_length=255)
     description = models.TextField('Описание', blank=True)
@@ -23,7 +26,7 @@ class Genre(TimeStampedMixin, models.Model):
         db_table = 'genres'
 
 
-class Film(TimeStampedMixin, models.Model):
+class Film(TimeStampedModel):
 
     class FilmType(models.TextChoices):
         MOVIE = 'mo', 'Фильм'
@@ -37,7 +40,6 @@ class Film(TimeStampedMixin, models.Model):
     file_path = models.FileField('Файл', upload_to='films/', blank=True)
     rating = models.FloatField('Рейтинг', validators=[MinValueValidator(0), MaxValueValidator(10)], blank=True)
     type = models.CharField('Тип', max_length=2, choices=FilmType.choices, default=FilmType.MOVIE)
-
     genres = models.ManyToManyField(Genre, through='GenresFilms', blank=True)
 
     def __str__(self):
@@ -49,13 +51,10 @@ class Film(TimeStampedMixin, models.Model):
         db_table = 'movies'
 
 
-class Person(TimeStampedMixin, models.Model):
+class Person(TimeStampedModel):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Имя', max_length=127)
-
-    actor = models.ManyToManyField(Film, verbose_name='Актер', related_name='actors', through='ActorsFilms')
-    writer = models.ManyToManyField(Film, verbose_name='Сценарист', related_name='writers', through='WritersFilms')
-    director = models.ManyToManyField(Film, verbose_name='Режиссер', related_name='directors', through='DirectorsFilms')
+    films = models.ManyToManyField(Film, verbose_name='Фильмы', related_name='persons', through='PersonsFilms')
 
     def __str__(self):
         return self.name
@@ -75,28 +74,11 @@ class GenresFilms(models.Model):
         db_table = 'genres_movies'
 
 
-class ActorsFilms(models.Model):
+class PersonsFilms(models.Model):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    role = models.CharField('Роль', max_length=1)
 
     class Meta:
-        db_table = 'actors_movies'
-
-
-class WritersFilms(models.Model):
-    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
-    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'writers_movies'
-
-
-class DirectorsFilms(models.Model):
-    id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
-    movie = models.ForeignKey(Film, on_delete=models.CASCADE)
-    person = models.ForeignKey(Person, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'directors_movies'
+        db_table = 'persons_movies'
