@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 DELIMITER = '|'
 
 
@@ -6,6 +8,7 @@ class SQLitePostgresTransfer:
     def __init__(self, sqlite_conn, pg_conn):
         self.sqlite_conn = sqlite_conn
         self.pg_conn = pg_conn
+        self.cursor = pg_conn.cursor()
 
     def load_data(self, model) -> set:
         result = set()
@@ -19,13 +22,12 @@ class SQLitePostgresTransfer:
             model.process_all(self)
 
     def save_data(self, model, models_set):
-        cursor = self.pg_conn.cursor()
         data, columns = model.export_csv(models_set)
         data.seek(0)
-        cursor.copy_from(data, model.Meta.table_to_export, sep=DELIMITER, columns=columns)
+        self.cursor.copy_from(data, model.Meta.table_to_export, sep=DELIMITER, columns=columns)
 
     def transfer(self):
-        for model in self.models:
+        for model in tqdm(self.models):
             loaded_data = self.load_data(model)
             self.process_data(loaded_data)
             self.save_data(model, loaded_data)

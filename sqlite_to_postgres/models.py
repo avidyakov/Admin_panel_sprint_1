@@ -19,8 +19,9 @@ class Genre(Model):
 class Person(Model):
     raw_actor_id: int = None
     raw_writer_id: str = None
-    name: str = ''
+
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
+    name: str = ''
 
     @classmethod
     def load_data(cls, table_name, rows):
@@ -55,58 +56,46 @@ class Movie(Model):
 
     def process_raw_genres(self, transfer) -> None:
         for raw_genre in self.raw_genres.split(', '):
-            try:
-                genre = list(filter(lambda g: g.name == raw_genre, transfer.genre_set))[0]
-            except IndexError:
+            genre = Genre.select_first(transfer.cursor, name=raw_genre)
+            if not genre:
                 genre = Genre(name=raw_genre)
-                transfer.genre_set.add(genre)
+                genre.insert(transfer.cursor)
 
-            try:
-                list(filter(
-                    lambda i: i.genre_id == genre.id and i.movie_id == self.id, transfer.genres_movies_set
-                ))[0]
-            except IndexError:
-                new_genres_movies = GenresMovies(genre_id=genre.id, movie_id=self.id)
-                transfer.genres_movies_set.add(new_genres_movies)
+            genre_movie = GenresMovies.select_first(transfer.cursor, genre_id=genre.id, movie_id=self.id)
+            if not genre_movie:
+                genre_movie = GenresMovies(genre_id=genre.id, movie_id=self.id)
+                genre_movie.insert(transfer.cursor)
 
     def process_raw_director(self, transfer) -> None:
         for raw_director in self.raw_director.split(', '):
-            try:
-                person = list(filter(lambda p: p.raw_writer_id == raw_director, transfer.person_set))[0]
-            except IndexError:
-                person = Person(name=raw_director)
-                transfer.person_set.add(person)
+            if raw_director == 'N/A':
+                continue
 
-            try:
-                list(filter(
-                    lambda i: i.person_id == person.id and i.movie_id == self.id, transfer.directors_movies_set
-                ))[0]
-            except IndexError:
-                new_directors_movies = DirectorsMovies(person_id=person.id, movie_id=self.id)
-                transfer.directors_movies_set.add(new_directors_movies)
+            person = Person.select_first(transfer.cursor, name=raw_director)
+            if not person:
+                person = Person(name=raw_director)
+                person.insert(transfer.cursor)
+
+            person_movie = PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id)
+            if not person_movie:
+                person_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
+                person_movie.insert(transfer.cursor)
 
     def process_raw_writer(self, transfer) -> None:
         if self.raw_writer:
-            writer = list(filter(lambda person: person.raw_writer_id == self.raw_writer, transfer.person_set))[0]
-            try:
-                list(filter(
-                    lambda i: i.person_id == writer.id and i.movie_id == self.id, transfer.writers_movies_set
-                ))[0]
-            except IndexError:
-                new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
-                transfer.writers_movies_set.add(new_persons_movie)
+            person = Person.select_first(transfer.sqlite_conn, 'writers', raw_writer_id=self.raw_writer)
+            person_movie = PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id)
+            if not person_movie:
+                new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
+                new_persons_movie.insert(transfer.cursor)
 
     def process_raw_writers(self, transfer) -> None:
         if self.raw_writers:
             for raw_writer in json.loads(self.raw_writers):
-                writer = list(filter(lambda p: p.raw_writer_id == raw_writer['id'], transfer.person_set))[0]
-                try:
-                    list(filter(
-                        lambda i: i.person_id == writer.id and i.movie_id == self.id, transfer.writers_movies_set
-                    ))[0]
-                except IndexError:
-                    new_persons_movie = WritersMovies(person_id=writer.id, movie_id=self.id)
-                    transfer.writers_movies_set.add(new_persons_movie)
+                person = Person.select_first(transfer.sqlite_conn, 'writers', raw_writer_id=raw_writer['id'])
+                if not PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id):
+                    new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
+                    new_persons_movie.insert(transfer.cursor)
 
     class Meta:
         tables_to_import = 'movies',
@@ -137,22 +126,21 @@ class PersonsMovies(Model):
     def process_raw_actor_id(self, transfer) -> None:
         if self.raw_actor_id:
             self.role = 'a'
-            person = list(filter(lambda p: str(p.raw_actor_id) == self.raw_actor_id, transfer.person_set))[0]
+            person = Person.select_first(transfer.sqlite_conn, 'actors', raw_actor_id=self.raw_actor_id)
             self.person_id = person.id
 
     def process_raw_movie_id(self, transfer) -> None:
         if self.raw_movie_id:
-            movie = list(filter(lambda m: m.raw_id == self.raw_movie_id, transfer.movie_set))[0]
+            movie = Movie.select_first(transfer.sqlite_conn, 'movies', raw_id=self.raw_movie_id)
             self.movie_id = movie.id
 
     def process_all(self, transfer):
         super().process_all(transfer)
 
-        actors_movies = list(filter(
-            lambda i: i.raw_actor_id == self.raw_actor_id and i.raw_movie_id == self.raw_movie_id,
-            transfer.actors_movies_set
-        ))
-        if len(actors_movies) == 2:
+        persons_movies = PersonsMovies.select_all(
+            transfer.sqlite_conn, raw_actor_id=self.raw_actor_id, raw_movie_id=self.raw_movie_id
+        )
+        if len(persons_movies) == 2:
             self.save = False
 
     class Meta:

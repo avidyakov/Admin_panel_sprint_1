@@ -25,3 +25,15 @@ services:
       - "python"
       - "entrypoint.py"
     restart: always
+  transfer:
+    container_name: movies_transfer
+    build:
+      context: ./sqlite_to_postgres
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./sqlite_to_postgres:/app
+    env_file:
+      - ./sqlite_to_postgres/.env
+    entrypoint:
+      - "python"
+      - "load_data.py"

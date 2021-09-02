@@ -1,10 +1,12 @@
+import os
 import sqlite3
+import sys
 
 import psycopg2
-from dataclasses_ import Genre, GenresMovies, Movie, Person
+from models import Genre, GenresMovies, Movie, Person
 from loguru import logger
 from psycopg2.extras import DictCursor
-from transfer.abs import SQLitePostgresTransfer
+from transfer import SQLitePostgresTransfer
 
 
 class Transfer(SQLitePostgresTransfer):
@@ -23,6 +25,8 @@ if __name__ == '__main__':
 
     sqlite_path = os.environ['SQLITE_PATH']
 
+    logger.remove()
+    logger.add(sys.stderr, format="{message}")
     with sqlite3.connect(sqlite_path) as sqlite_conn, \
             psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         cursor = pg_conn.cursor()
