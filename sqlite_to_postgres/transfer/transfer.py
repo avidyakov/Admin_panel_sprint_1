@@ -21,14 +21,13 @@ class SQLitePostgresTransfer:
             model.process_all(self)
 
     def save_data(self, model, models_set):
-        cursor = self.pg_conn.cursor()
-        data, columns = model.export_csv(models_set)
-        data.seek(0)
-        cursor.copy_from(data, model.Meta.table_to_export, sep=DELIMITER, columns=columns)
-        cursor.close()
+        with self.pg_conn.cursor() as cursor:
+            data, columns = model.export_csv(models_set)
+            data.seek(0)
+            cursor.copy_from(data, model.Meta.table_to_export, sep=DELIMITER, columns=columns)
 
     def transfer(self):
         for model in tqdm(self.models):
             loaded_data = self.load_data(model)
             self.process_data(loaded_data)
-            # self.save_data(model, loaded_data)
+            self.save_data(model, loaded_data)

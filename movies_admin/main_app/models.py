@@ -75,10 +75,16 @@ class GenresFilms(models.Model):
 
 
 class PersonsFilms(models.Model):
+
+    class PersonRole(models.TextChoices):
+        ACTOR = 'a', 'Актер'
+        WRITER = 'w', 'Сценарист'
+        DIRECTOR = 'd', 'Режиссер'
+
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    role = models.CharField('Роль', max_length=1)
+    role = models.CharField('Роль', max_length=1, choices=PersonRole.choices)
 
     class Meta:
         db_table = 'persons_movies'

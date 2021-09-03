@@ -60,10 +60,11 @@ class Movie(Model):
             if not genre:
                 genre = Genre(name=raw_genre)
                 genre.insert(transfer.pg_conn)
-            # genre_movie = GenresMovies.select_first(transfer.cursor, genre_id=genre.id, movie_id=self.id)
+
+            # genre_movie = GenresMovies.select_first(transfer.pg_conn, genre_id=genre.id, movie_id=self.id)
             # if not genre_movie:
             #     genre_movie = GenresMovies(genre_id=genre.id, movie_id=self.id)
-            #     genre_movie.insert(transfer.cursor)
+            #     genre_movie.insert(transfer.pg_conn)
 
     def process_raw_director(self, transfer) -> None:
         for raw_director in self.raw_director.split(', '):
@@ -75,10 +76,10 @@ class Movie(Model):
                 person = Person(name=raw_director)
                 person.insert(transfer.pg_conn)
 
-            # person_movie = PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id)
+            # person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
             # if not person_movie:
             #     person_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
-            #     person_movie.insert(transfer.cursor)
+            #     person_movie.insert(transfer.pg_conn)
 
     def process_raw_writer(self, transfer) -> None:
         if self.raw_writer:
