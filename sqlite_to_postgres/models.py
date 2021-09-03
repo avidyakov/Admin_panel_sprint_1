@@ -61,10 +61,10 @@ class Movie(Model):
                 genre = Genre(name=raw_genre)
                 genre.insert(transfer.pg_conn)
 
-            # genre_movie = GenresMovies.select_first(transfer.pg_conn, genre_id=genre.id, movie_id=self.id)
-            # if not genre_movie:
-            #     genre_movie = GenresMovies(genre_id=genre.id, movie_id=self.id)
-            #     genre_movie.insert(transfer.pg_conn)
+            genre_movie = GenresMovies.select_first(transfer.pg_conn, genre_id=genre.id, movie_id=self.id)
+            if not genre_movie:
+                genre_movie = GenresMovies(genre_id=genre.id, movie_id=self.id)
+                genre_movie.insert(transfer.pg_conn)
 
     def process_raw_director(self, transfer) -> None:
         for raw_director in self.raw_director.split(', '):
@@ -86,10 +86,10 @@ class Movie(Model):
             raw_writer_id, raw_writer_name = \
                 transfer.sqlite_conn.execute(f'SELECT id, name FROM writers WHERE id == "{self.raw_writer}"').fetchone()
             person = Person.select_first(transfer.pg_conn, name=raw_writer_name)
-            person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
-            if not person_movie:
-                new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
-                new_persons_movie.insert(transfer.pg_conn)
+            # person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
+            # if not person_movie:
+            #     new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
+            #     new_persons_movie.insert(transfer.pg_conn)
 
     def process_raw_writers(self, transfer) -> None:
         if self.raw_writers:

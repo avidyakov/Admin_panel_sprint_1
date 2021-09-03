@@ -32,7 +32,7 @@ class Model:
     def insert(self, conn) -> None:
         with conn.cursor() as cursor:
             format_columns = ', '.join(self._get_columns())
-            values = ", ".join(["%s"] * len(self._get_values()))
+            values = ', '.join(['%s'] * len(self._get_values()))
             cursor.execute(
                 f'INSERT INTO {self.Meta.table_to_export} ({format_columns}) VALUES ({values});',
                 self._get_values()
@@ -40,30 +40,28 @@ class Model:
             conn.commit()
 
     @classmethod
-    def _select(cls, conn, table_name: str, many: bool = False, **kwargs):
-        format_condition = ' AND '.join([f'{key} = "{value}"'for key, value in kwargs.items()])
+    def _select(cls, cursor, table_name: str, **kwargs):
+        format_condition = ' AND '.join([f'{key} = %s' for key in kwargs.keys()])
         format_columns = ', '.join(cls._get_columns())
         table_name = table_name or cls.Meta.table_to_export
-
-        with conn.cursor() as cursor:
-            try:
-                cursor.execute(
-                    f'SELECT {format_columns} FROM {table_name} WHERE {format_condition};'
-                )
-                return cursor.fetchall() if many else cursor.fetchone()
-            except errors.UndefinedColumn:
-                conn.rollback()
+        cursor.execute(
+            f'SELECT {format_columns} FROM {table_name} WHERE {format_condition};',
+            [str(value) for value in kwargs.values()]
+        )
 
     @classmethod
     def select_first(cls, conn, table_name=None, **kwargs):
-        selected = cls._select(conn, table_name, **kwargs)
-        if selected:
-            return cls(**dict(zip(cls._get_columns(), selected)))
+        with conn.cursor() as cursor:
+            cls._select(cursor, table_name, **kwargs)
+            if selected := cursor.fetchone():
+                return cls(**dict(zip(cls._get_columns(), selected)))
 
     @classmethod
     def select_all(cls, conn, table_name=None, **kwargs):
-        selected_list = cls._select(conn, table_name, many=True, **kwargs)
-        return [cls(**dict(zip(cls._get_columns(), selected))) for selected in selected_list]
+        with conn.cursor() as cursor:
+            cls._select(cursor, table_name, many=True, **kwargs)
+            selected_list = cursor.fetchall()
+            return [cls(**dict(zip(cls._get_columns(), selected))) for selected in selected_list]
 
     @classmethod
     def export_csv(cls, values):
