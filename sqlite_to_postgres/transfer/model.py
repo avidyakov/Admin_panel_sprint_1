@@ -27,29 +27,41 @@ class Model:
     def _get_columns(cls) -> list:
         return [f.name for f in fields(cls) if f.name != 'save' and f.name != 'set' and not f.name.startswith('raw_')]
 
-    def _get_values(self) -> str:
-        return ', '.join([getattr(self, field_name) for field_name in self._get_columns()])
+    def _get_values(self) -> list:
+        return [str(getattr(self, field_name)) for field_name in self._get_columns()]
 
     def insert(self, cursor) -> None:
+        format_columns = ', '.join(self._get_columns())
+        print(self._get_values())
         cursor.execute(
-            f'INSERT INTO {self.Meta.table_to_export} ({self._get_columns()}) VALUES ({self._get_values()});'
+            f'INSERT INTO {self.Meta.table_to_export} ({format_columns}) VALUES (%s, %s);',
+            self._get_values()
         )
 
     @classmethod
     def _select(cls, cursor, table_name, **kwargs):
+        print(3)
         format_condition = ' AND '.join([f'{key} = "{value}"'for key, value in kwargs.items()])
+        print(4, format_condition)
         format_columns = ', '.join(cls._get_columns())
+        print(5, format_columns)
         table_name = table_name or cls.Meta.table_to_export
+        print(6, table_name)
 
         if cursor.execute(f'SELECT count(*) FROM {table_name};'):
+            print(7)
             return cursor.execute(
                 f'SELECT {format_columns} FROM {table_name} WHERE {format_condition};'
             )
 
     @classmethod
     def select_first(cls, cursor, table_name=None, **kwargs):
-        selected = cls._select(cursor, table_name, **kwargs).fetchone()
-        return cls(**dict(zip(cls._get_columns(), selected)))
+        print(2)
+        selected = cls._select(cursor, table_name, **kwargs)
+        print(8, selected)
+
+        if selected:
+            return cls(**dict(zip(cls._get_columns(), selected)))
 
     @classmethod
     def select_all(cls, cursor, table_name=None, **kwargs):

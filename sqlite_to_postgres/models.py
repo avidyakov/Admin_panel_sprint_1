@@ -55,12 +55,17 @@ class Movie(Model):
             self.imdb_rating = self.raw_imdb_rating
 
     def process_raw_genres(self, transfer) -> None:
+        print('process', self.raw_genres)
         for raw_genre in self.raw_genres.split(', '):
+            print(raw_genre)
+            print(1)
             genre = Genre.select_first(transfer.cursor, name=raw_genre)
+            print(9)
             if not genre:
+                print(10)
                 genre = Genre(name=raw_genre)
                 genre.insert(transfer.cursor)
-
+            print(11)
             genre_movie = GenresMovies.select_first(transfer.cursor, genre_id=genre.id, movie_id=self.id)
             if not genre_movie:
                 genre_movie = GenresMovies(genre_id=genre.id, movie_id=self.id)
@@ -83,7 +88,9 @@ class Movie(Model):
 
     def process_raw_writer(self, transfer) -> None:
         if self.raw_writer:
-            person = Person.select_first(transfer.sqlite_conn, 'writers', raw_writer_id=self.raw_writer)
+            raw_writer_id, raw_writer_name = \
+                transfer.sqlite_conn.execute(f'SELECT id, name FROM writers WHERE id == "{self.raw_writer}"').fetchone()
+            person = Person.select_first(transfer.cursor, name=raw_writer_name)
             person_movie = PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id)
             if not person_movie:
                 new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
@@ -92,7 +99,11 @@ class Movie(Model):
     def process_raw_writers(self, transfer) -> None:
         if self.raw_writers:
             for raw_writer in json.loads(self.raw_writers):
-                person = Person.select_first(transfer.sqlite_conn, 'writers', raw_writer_id=raw_writer['id'])
+                _, raw_writer_name = \
+                    transfer.sqlite_conn.execute(
+                        f'''SELECT id, name FROM writers WHERE id == "{raw_writer['id']}"'''
+                    ).fetchone()
+                person = Person.select_first(transfer.cursor, name=raw_writer_name)
                 if not PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id):
                     new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
                     new_persons_movie.insert(transfer.cursor)
