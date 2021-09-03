@@ -23,12 +23,6 @@ class Person(Model):
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
     name: str = ''
 
-    @classmethod
-    def load_data(cls, table_name, rows):
-        if table_name == 'actors':
-            return (cls(raw_actor_id=row[0], name=row[1]) for row in rows)
-        return (cls(raw_writer_id=row[0], name=row[1]) for row in rows)
-
     class Meta:
         tables_to_import = 'actors', 'writers'
         table_to_export = 'persons'
@@ -48,11 +42,15 @@ class Movie(Model):
     imdb_rating: float = 0.0
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
-    def process_raw_imdb_rating(self, transfer):
+    def process_all(self, transfer):
+        self.save = False
         if self.raw_imdb_rating == 'N/A':
             self.imdb_rating = 0.0
         else:
             self.imdb_rating = self.raw_imdb_rating
+        self.insert(transfer.pg_conn)
+
+        super().process_all(transfer)
 
     def process_raw_genres(self, transfer) -> None:
         for raw_genre in self.raw_genres.split(', '):
@@ -76,20 +74,20 @@ class Movie(Model):
                 person = Person(name=raw_director)
                 person.insert(transfer.pg_conn)
 
-            # person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
-            # if not person_movie:
-            #     person_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
-            #     person_movie.insert(transfer.pg_conn)
+            person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
+            if not person_movie:
+                person_movie = PersonsMovies(person_id=person.id, movie_id=self.id, part='d')
+                person_movie.insert(transfer.pg_conn)
 
     def process_raw_writer(self, transfer) -> None:
         if self.raw_writer:
             raw_writer_id, raw_writer_name = \
                 transfer.sqlite_conn.execute(f'SELECT id, name FROM writers WHERE id == "{self.raw_writer}"').fetchone()
             person = Person.select_first(transfer.pg_conn, name=raw_writer_name)
-            # person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
-            # if not person_movie:
-            #     new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
-            #     new_persons_movie.insert(transfer.pg_conn)
+            person_movie = PersonsMovies.select_first(transfer.pg_conn, person_id=person.id, movie_id=self.id)
+            if not person_movie:
+                new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id, part='w')
+                new_persons_movie.insert(transfer.pg_conn)
 
     def process_raw_writers(self, transfer) -> None:
         if self.raw_writers:
@@ -100,7 +98,7 @@ class Movie(Model):
                     ).fetchone()
                 person = Person.select_first(transfer.pg_conn, name=raw_writer_name)
                 if not PersonsMovies.select_first(transfer.cursor, person_id=person.id, movie_id=self.id):
-                    new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id)
+                    new_persons_movie = PersonsMovies(person_id=person.id, movie_id=self.id, part='w')
                     new_persons_movie.insert(transfer.pg_conn)
 
     class Meta:
@@ -127,11 +125,11 @@ class PersonsMovies(Model):
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
     person_id: uuid.UUID = None
     movie_id: uuid.UUID = None
-    role: str = ''
+    part: str = ''
 
     def process_raw_actor_id(self, transfer) -> None:
         if self.raw_actor_id:
-            self.role = 'a'
+            self.part = 'a'
             person = Person.select_first(transfer.sqlite_conn, 'actors', raw_actor_id=self.raw_actor_id)
             self.person_id = person.id
 

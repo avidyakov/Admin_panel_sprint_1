@@ -1,15 +1,12 @@
 import csv
 import io
-from dataclasses import fields, asdict, field
-
-from psycopg2 import errors
+from dataclasses import fields, asdict
 
 from .transfer import DELIMITER
 
 
 class Model:
     save: bool = True
-    set: set = field(default_factory=set)
 
     def process_all(self, transfer):
         for raw_field in self._get_raw_fields():
@@ -24,7 +21,7 @@ class Model:
 
     @classmethod
     def _get_columns(cls) -> list:
-        return [f.name for f in fields(cls) if f.name != 'save' and f.name != 'set' and not f.name.startswith('raw_')]
+        return [f.name for f in fields(cls) if f.name != 'save' and not f.name.startswith('raw_')]
 
     def _get_values(self) -> list:
         return [str(getattr(self, field_name)) for field_name in self._get_columns()]
@@ -74,7 +71,3 @@ class Model:
                 writer.writerow(filtered_dict)
 
         return file, columns
-
-    @classmethod
-    def load_data(cls, table_name, rows):
-        return (cls(*row) for row in rows)

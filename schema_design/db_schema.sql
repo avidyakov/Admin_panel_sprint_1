@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS content.persons_movies (
     id uuid PRIMARY KEY,
     person_id uuid NOT NULL,
     movie_id uuid NOT NULL,
-    role VARCHAR(1) NOT NULL,
+    part VARCHAR(1) NOT NULL,
     FOREIGN KEY (person_id) REFERENCES content.persons(id) ON UPDATE CASCADE,
     FOREIGN KEY (movie_id) REFERENCES content.movies(id) ON UPDATE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS genres_movies_index ON content.genres_movies (movie_id, genre_id);
 
-CREATE UNIQUE INDEX IF NOT EXISTS persons_movies_index ON content.persons_movies (person_id, movie_id);
+CREATE UNIQUE INDEX IF NOT EXISTS persons_movies_index ON content.persons_movies (person_id, movie_id, part);

@@ -1,5 +1,3 @@
-from tqdm import tqdm
-
 DELIMITER = '|'
 
 
@@ -12,22 +10,27 @@ class SQLitePostgresTransfer:
     def load_data(self, model) -> set:
         result = set()
         for table_name in model.Meta.tables_to_import:
-            selected = self.sqlite_conn.execute(f'SELECT * FROM {table_name}').fetchall()
-            result.update(model.load_data(table_name, selected))
+            cursor = self.sqlite_conn.cursor()
+            for row in cursor.execute(f'SELECT * FROM {table_name}'):
+                # Костыль 📛
+                if table_name == 'actors':
+                    model_instance = model(raw_actor_id=row[0], name=row[1])
+                elif table_name == 'writers':
+                    model_instance = model(raw_writer_id=row[0], name=row[1])
+                else:
+                    model_instance = model(*row)
+                model_instance.process_all(self)
+                result.add(model_instance)
+            cursor.close()
         return result
 
-    def process_data(self, models):
-        for model in models:
-            model.process_all(self)
-
-    def save_data(self, model, models_set):
+    def save_data(self, model, models_set) -> None:
         with self.pg_conn.cursor() as cursor:
             data, columns = model.export_csv(models_set)
             data.seek(0)
             cursor.copy_from(data, model.Meta.table_to_export, sep=DELIMITER, columns=columns)
 
-    def transfer(self):
-        for model in tqdm(self.models):
+    def transfer(self) -> None:
+        for model in self.models:
             loaded_data = self.load_data(model)
-            self.process_data(loaded_data)
             self.save_data(model, loaded_data)

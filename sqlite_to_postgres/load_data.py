@@ -29,16 +29,14 @@ if __name__ == '__main__':
     logger.add(sys.stderr, format="{message}")
     with sqlite3.connect(sqlite_path) as sqlite_conn, \
             psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
-        # with pg_conn.cursor() as cursor:
-        #     cursor.execute('SELECT * FROM content.genres')
-
-
-            # if not cursor.fetchone():
-        transfer = Transfer(sqlite_conn, pg_conn)
-        transfer.transfer()
-        logger.info('Перенос данных успешно выполнен')
-            # else:
-            #     logger.warning('Данные в базе уже есть')
+        with pg_conn.cursor() as cursor:
+            cursor.execute('SELECT * FROM content.genres')
+            if not cursor.fetchone():
+                transfer = Transfer(sqlite_conn, pg_conn)
+                transfer.transfer()
+                logger.info('Перенос данных успешно выполнен')
+            else:
+                logger.warning('Данные в базе уже есть')
 
     pg_conn.close()
     sqlite_conn.close()

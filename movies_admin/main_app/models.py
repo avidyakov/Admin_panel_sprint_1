@@ -84,7 +84,7 @@ class PersonsFilms(models.Model):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     movie = models.ForeignKey(Film, on_delete=models.CASCADE)
     person = models.ForeignKey(Person, on_delete=models.CASCADE)
-    role = models.CharField('Роль', max_length=1, choices=PersonRole.choices)
+    part = models.CharField('Роль', max_length=1, choices=PersonRole.choices)
 
     class Meta:
         db_table = 'persons_movies'
