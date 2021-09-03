@@ -3,14 +3,14 @@ import sqlite3
 import sys
 
 import psycopg2
-from models import Genre, GenresMovies, Movie, Person
+from models import Genre, GenresMovies, Movie, Person, PersonsMovies
 from loguru import logger
 from psycopg2.extras import DictCursor
 from transfer import SQLitePostgresTransfer
 
 
 class Transfer(SQLitePostgresTransfer):
-    models = (Genre, Person, Movie, GenresMovies, )
+    models = (Genre, Person, Movie, GenresMovies, PersonsMovies)
 
 
 if __name__ == '__main__':
@@ -30,13 +30,10 @@ if __name__ == '__main__':
     with sqlite3.connect(sqlite_path) as sqlite_conn, \
             psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         with pg_conn.cursor() as cursor:
-            cursor.execute('SELECT * FROM content.genres')
-            if not cursor.fetchone():
-                transfer = Transfer(sqlite_conn, pg_conn)
-                transfer.transfer()
-                logger.info('Перенос данных успешно выполнен')
-            else:
-                logger.warning('Данные в базе уже есть')
+            cursor.execute('TRUNCATE genres, genres_movies, movies, persons, persons_movies')
+            transfer = Transfer(sqlite_conn, pg_conn)
+            transfer.transfer()
+            logger.info('Перенос данных успешно выполнен')
 
     pg_conn.close()
     sqlite_conn.close()

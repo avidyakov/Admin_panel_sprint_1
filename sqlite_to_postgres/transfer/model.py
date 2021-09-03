@@ -54,13 +54,6 @@ class Model:
                 return cls(**dict(zip(cls._get_columns(), selected)))
 
     @classmethod
-    def select_all(cls, conn, table_name=None, **kwargs):
-        with conn.cursor() as cursor:
-            cls._select(cursor, table_name, many=True, **kwargs)
-            selected_list = cursor.fetchall()
-            return [cls(**dict(zip(cls._get_columns(), selected))) for selected in selected_list]
-
-    @classmethod
     def export_csv(cls, values):
         file = io.StringIO()
         columns = cls._get_columns()

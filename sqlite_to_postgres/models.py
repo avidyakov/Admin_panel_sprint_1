@@ -30,15 +30,15 @@ class Person(Model):
 
 @dataclass(unsafe_hash=True)
 class Movie(Model):
-    raw_id: str
-    raw_genres: str
-    raw_director: str
-    raw_writer: str
-    title: str
-    plot: str
-    raw_ratings: None
-    raw_imdb_rating: float
-    raw_writers: str
+    raw_id: str = ''
+    raw_genres: str = ''
+    raw_director: str = ''
+    raw_writer: str = ''
+    title: str = ''
+    plot: str = ''
+    raw_ratings: float = ''
+    raw_imdb_rating: float = ''
+    raw_writers: str = ''
     imdb_rating: float = 0.0
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
 
@@ -48,8 +48,8 @@ class Movie(Model):
             self.imdb_rating = 0.0
         else:
             self.imdb_rating = self.raw_imdb_rating
-        self.insert(transfer.pg_conn)
 
+        self.insert(transfer.pg_conn)
         super().process_all(transfer)
 
     def process_raw_genres(self, transfer) -> None:
@@ -119,8 +119,8 @@ class GenresMovies(Model):
 
 @dataclass(unsafe_hash=True)
 class PersonsMovies(Model):
-    raw_movie_id: str = None
-    raw_actor_id: int = None
+    raw_movie_id: str = ''
+    raw_actor_id: int = ''
 
     id: uuid.UUID = field(default_factory=uuid.uuid4, hash=True)
     person_id: uuid.UUID = None
@@ -130,22 +130,41 @@ class PersonsMovies(Model):
     def process_raw_actor_id(self, transfer) -> None:
         if self.raw_actor_id:
             self.part = 'a'
-            person = Person.select_first(transfer.sqlite_conn, 'actors', raw_actor_id=self.raw_actor_id)
+            cursor = transfer.sqlite_conn.cursor()
+            cursor.execute(
+                f"""SELECT * FROM actors WHERE id = '{self.raw_actor_id}'"""
+            )
+            person = Person.select_first(transfer.pg_conn, name=cursor.fetchone()[1])
             self.person_id = person.id
+            cursor.close()
 
     def process_raw_movie_id(self, transfer) -> None:
         if self.raw_movie_id:
-            movie = Movie.select_first(transfer.sqlite_conn, 'movies', raw_id=self.raw_movie_id)
+            cursor = transfer.sqlite_conn.cursor()
+            cursor.execute(
+                f"""SELECT * FROM movies WHERE id = '{self.raw_movie_id}'"""
+            )
+            movie = Movie.select_first(transfer.pg_conn, title=cursor.fetchone()[4])
             self.movie_id = movie.id
+            cursor.close()
 
     def process_all(self, transfer):
         super().process_all(transfer)
-
-        persons_movies = PersonsMovies.select_all(
-            transfer.sqlite_conn, raw_actor_id=self.raw_actor_id, raw_movie_id=self.raw_movie_id
+        cursor = transfer.sqlite_conn.cursor()
+        cursor.execute(
+            f"""SELECT count(*) FROM movie_actors WHERE movie_id = '{self.raw_movie_id}' AND actor_id = '{self.raw_actor_id}'"""
         )
-        if len(persons_movies) == 2:
-            self.save = False
+        with transfer.pg_conn.cursor() as pg_cursor:
+            pg_cursor.execute(
+                f'SELECT count(*) FROM persons_movies WHERE part = %s AND person_id = %s AND movie_id = %s',
+                (self.part, str(self.person_id), str(self.movie_id))
+            )
+            count = pg_cursor.fetchone()['count']
+            if not any((cursor.fetchone()[0] == 2, count == 1)):
+                self.insert(transfer.pg_conn)
+
+        cursor.close()
+        self.save = False
 
     class Meta:
         tables_to_import = 'movie_actors',
