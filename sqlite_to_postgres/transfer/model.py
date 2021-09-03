@@ -1,9 +1,6 @@
 import csv
 import io
-import sys
 from dataclasses import fields, asdict, field
-
-from loguru import logger
 
 from .transfer import DELIMITER
 
@@ -32,33 +29,26 @@ class Model:
 
     def insert(self, cursor) -> None:
         format_columns = ', '.join(self._get_columns())
-        print(self._get_values())
+        values = ", ".join(["%s"] * len(self._get_values()))
         cursor.execute(
-            f'INSERT INTO {self.Meta.table_to_export} ({format_columns}) VALUES (%s, %s);',
+            f'INSERT INTO {self.Meta.table_to_export} ({format_columns}) VALUES ({values});',
             self._get_values()
         )
 
     @classmethod
     def _select(cls, cursor, table_name, **kwargs):
-        print(3)
         format_condition = ' AND '.join([f'{key} = "{value}"'for key, value in kwargs.items()])
-        print(4, format_condition)
         format_columns = ', '.join(cls._get_columns())
-        print(5, format_columns)
         table_name = table_name or cls.Meta.table_to_export
-        print(6, table_name)
 
         if cursor.execute(f'SELECT count(*) FROM {table_name};'):
-            print(7)
             return cursor.execute(
                 f'SELECT {format_columns} FROM {table_name} WHERE {format_condition};'
             )
 
     @classmethod
     def select_first(cls, cursor, table_name=None, **kwargs):
-        print(2)
         selected = cls._select(cursor, table_name, **kwargs)
-        print(8, selected)
 
         if selected:
             return cls(**dict(zip(cls._get_columns(), selected)))
