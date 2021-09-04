@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
-class TimeStampedModel(models.Model):
+class TimeStampedMixin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -12,7 +12,7 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class Genre(TimeStampedModel):
+class Genre(TimeStampedMixin):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Название', max_length=255)
     description = models.TextField('Описание', blank=True)
@@ -23,14 +23,16 @@ class Genre(TimeStampedModel):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+        # Я не указываю отдельную схему тк в настройках подключения я указал -с search_path=public,content.
+        # Таблицы создаются в правильных схемах и это решения изящнее, чем делать много кривых записей с кавычками
         db_table = 'genres'
 
 
-class Film(TimeStampedModel):
+class Film(TimeStampedMixin):
 
     class FilmType(models.TextChoices):
-        MOVIE = 'mo', 'Фильм'
-        TV_SHOW = 'tv', 'Сериал'
+        MOVIE = 'movie', 'Фильм'
+        TV_SHOW = 'series', 'Сериал'
 
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     title = models.CharField('Заголовок', max_length=255)
@@ -39,7 +41,7 @@ class Film(TimeStampedModel):
     certificate = models.TextField('Сертификат', blank=True)
     file_path = models.FileField('Файл', upload_to='films/', blank=True)
     rating = models.FloatField('Рейтинг', validators=[MinValueValidator(0), MaxValueValidator(10)], blank=True)
-    type = models.CharField('Тип', max_length=2, choices=FilmType.choices, default=FilmType.MOVIE)
+    type = models.CharField('Тип', max_length=7, choices=FilmType.choices, default=FilmType.MOVIE)
     genres = models.ManyToManyField(Genre, through='GenresFilms', blank=True)
 
     def __str__(self):
@@ -51,7 +53,7 @@ class Film(TimeStampedModel):
         db_table = 'movies'
 
 
-class Person(TimeStampedModel):
+class Person(TimeStampedMixin):
     id = models.UUIDField('UUID', primary_key=True, default=uuid.uuid4)
     name = models.CharField('Имя', max_length=127)
     films = models.ManyToManyField(Film, verbose_name='Фильмы', related_name='persons', through='PersonsFilms')
